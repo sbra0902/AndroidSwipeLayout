@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
@@ -38,6 +39,8 @@ public class SwipeLayout extends FrameLayout {
     private static final DragEdge DefaultDragEdge = DragEdge.Right;
 
     private int mTouchSlop;
+
+    private Status mCurrentStatus = Status.Close;
 
     private DragEdge mCurrentDragEdge = DefaultDragEdge;
     private ViewDragHelper mDragHelper;
@@ -110,6 +113,16 @@ public class SwipeLayout extends FrameLayout {
         int ordinal = a.getInt(R.styleable.SwipeLayout_show_mode, ShowMode.PullOut.ordinal());
         mShowMode = ShowMode.values()[ordinal];
         a.recycle();
+
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (mCurrentStatus.equals(Status.Open) && getOpenStatus().equals(Status.Close))
+                    open(false, false, getDragEdge());
+                else if (mCurrentStatus.equals(Status.Close) && getOpenStatus().equals(Status.Open))
+                    close(false, false);
+            }
+        });
 
     }
 
@@ -1324,7 +1337,7 @@ public class SwipeLayout extends FrameLayout {
         if (currentDragEdge == null || surfaceView == null) {
             return;
         }
-        float willOpenPercent = (isCloseBeforeDragged ? mWillOpenPercentAfterClose : mWillOpenPercentAfterOpen););
+        float willOpenPercent = (isCloseBeforeDragged ? mWillOpenPercentAfterClose : mWillOpenPercentAfterOpen);
         if (currentDragEdge == DragEdge.Left) {
             if (xvel > minVelocity) open();
             else if (xvel < -minVelocity) close();
@@ -1397,6 +1410,7 @@ public class SwipeLayout extends FrameLayout {
                 safeBottomView();
             }
         }
+        mCurrentStatus = Status.Open;
         invalidate();
     }
 
@@ -1452,6 +1466,7 @@ public class SwipeLayout extends FrameLayout {
                 safeBottomView();
             }
         }
+        mCurrentStatus = Status.Close;
         invalidate();
     }
 
